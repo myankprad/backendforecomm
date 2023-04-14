@@ -7,7 +7,7 @@ import app from "./src/app.js"
      console.log("DB CONNECTED");
      app.on("error" ,(err)=>{
         console.error("error", err);
-        throw err 
+        throw err 152
      } {
 
      })
