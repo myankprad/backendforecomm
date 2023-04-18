@@ -2,15 +2,23 @@ import mongoose from "mongoose";
 import app from "./src/app.js"
 
 ( async ()=> {
-  try{
-     mongoose.connect(config.MONGODB_URL)
-     console.log("DB CONNECTED");
-     app.on("error" ,(err)=>{
-        console.error("error", err);
-        throw err 152
-     } {
+   try{
+     await mongoose.connect("mongodb://localhost:27017/ecomm")
+     console.log("DB CONNECTED")
 
+     app.on("error", (err)=>{
+      console.error("ERROR" , err)
+      throw err
      })
-  }
-}
-)
+      
+     const onListening =()=>{
+      console.log(`Listening on port 5000`)
+     }
+
+     app.listen(5000, onListening )
+
+   } catch(err){
+       console.error("ERROR". err)
+       throw err
+   }
+})()
