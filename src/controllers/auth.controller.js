@@ -113,3 +113,23 @@ export const getProfile = asyncHandler(async(req, res)=>{
         user
     })
 })
+
+export const forgotPassword = asyncHandler(async (req, res)=>{
+    const {email} = req.body
+    if(!email){
+        throw new CustomError("Email not found", 400)
+    }
+
+  const user =  await User.findOne({email})
+  if(!user){
+    throw new CustomError("user not found", 404)
+}
+
+const resetToken = user.generateForgotPasswordToken()
+
+await user.save({validateBeforeSave: false})
+
+const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/auth/password/reset/${resetToken}`
+   
+const message = `Your password reset token is as follows \n\n ${resetUrl} \n\n if this was not requested bt you please ignore`
+})
