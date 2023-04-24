@@ -2,6 +2,7 @@
 import asyncHandler from "../service/asyncHandler";
 import CustomError from "../utils/CustomError";
 import User from "../models/user.schema.js"
+import mailHelper from "../utils/mailHelper.js"
 
 
 /******************************************************
@@ -132,4 +133,62 @@ await user.save({validateBeforeSave: false})
 const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/auth/password/reset/${resetToken}`
    
 const message = `Your password reset token is as follows \n\n ${resetUrl} \n\n if this was not requested bt you please ignore`
+
+try{
+    const options = {}
+    await mailHelper({
+        email: user.email,
+        subject: "Password reset mail",
+        message
+    })
+} catch(error){
+user.forgotPasswordToken = undefined
+user.forgotPasswordExpiry = undefined
+
+await user.save({validateBeforeSave : false})
+
+throw new CustomError( error.message ||"Email could not be send")
+
+}
+
+})
+
+
+export const resetPassword = asyncHandler(async (req, res)=>{
+    const {token : resetToken} = req.params
+    const {password, confirmPassword} = req.body
+
+    const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex")
+
+  const user = await  User.findOne({
+        forgotPasswordToken : resetPasswordToken,
+        forgotPasswordExpiry: {$gt : Date.now() }
+    })
+
+    if(!user){
+        throw new CustomError("Password reset token is invalid", 400)
+    }
+
+    if(password !== confirmPassword){
+        throw new CustomError("password does not match",400)
+    }
+
+    user.password = password;
+
+    user.forgotPasswordToken = undefined;
+    user.forgotPasswordExpiry = undefined
+
+    await user.save()
+
+    // optional 
+    const token = user.getJWTtoken()
+    res.cookie("token", token, cookieOptions)
+
+    res.status(200).json({
+        success: true,
+        user,
+    })
 })
